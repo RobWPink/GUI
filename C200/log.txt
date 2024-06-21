@@ -1,0 +1,2 @@
+nohup: ignoring input
+'NoneType' object is not subscriptable
