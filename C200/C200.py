@@ -1,8 +1,8 @@
 from pathlib import Path
 from pyModbusTCP.client import ModbusClient
-from pyModbusTCP.utils import *
+from pyModbusTCP.utils import test_bit
 from tkinter import *
-import datetime,subprocess,re,time,datetime,ctypes
+import datetime,subprocess,re,time,datetime,ctypes,os,sys
 
 OUTPUT_PATH = Path(__file__).parent
 ASSETS_PATH = OUTPUT_PATH / Path(r"./assets/frame0")
@@ -13,145 +13,41 @@ def relative_to_assets(path: str) -> Path:
     return ASSETS_PATH / Path(path)
 
 window = Tk()
+
 width= window.winfo_screenwidth()	#add this
 height= window.winfo_screenheight() #add this
 window.geometry("%dx%d" % (width, height)) #add this
-window.configure(bg = "#FFFFFF")
-
-LSR={"Schmersal":[0,0,0],"Global Interlock":[0,0,0],"DPS469 DPS563":[0,0,0],"Hydraulic Level":[0,0,0],\
-	"Coolant Flow":[0,0,0],"P2 Pressure":[0,0,0],"Contamination 1":[0,0,0],"Contamination 2":[0,0,0],\
-	"E-STOP":[0,0,0],"Suction Pressure":[0,0,0],"Discharge Flow":[0,0,0],"H2 Detector":[0,0,0],\
-	"CPM Rate":[0,0,0],"Oil Temp":[0,0,0],"Coolant Temp":[0,0,0],"Suction Tank Psi":[0,0,0],"Gas Temp":[0,0,0],\
-	"IDLE Psi":[0,0,0],"Uneven Psi":[0,0,0],"S1 Timeout":[0,0,0],"S2 Timeout":[0,0,0],"TT-810":[0,0,0],\
-	"TT-809":[0,0,0],"TT-715":[0,0,0],"TT-520":[0,0,0],"TT-521":[0,0,0],"PT-519":[0,0,0],"PT-407":[0,0,0],\
-	"PT-410":[0,0,0],"PT-113":[0,0,0]
+window.overrideredirect(True)
+window.configure(bg = "#FFFFFF",cursor="none")
+#[bit#,data,]
+LSR={"Schmersal":[0,0,0,0],"Global Interlock":[1,0,0,0],"DPS469 DPS563":[2,0,0,0],"Hydraulic Level":[3,0,0,0],\
+	"Coolant Flow":[4,0,0,0],"P2 Pressure":[5,0,0,0],"Contamination 1":[6,0,0,0],"Contamination 2":[7,0,0,0],\
+	"E-STOP":[8,0,0,0],"Suction Pressure":[9,0,0,0],"Discharge Flow":[10,0,0,0],"H2 Detector":[11,0,0,0],\
+	"CPM Rate":[12,0,0,0],"Oil Temp":[13,0,0,0],"Coolant Temp":[14,0,0,0],"Suction Tank Psi":[15,0,0,0],"Gas Temp":[16,0,0,0],\
+	"IDLE Psi":[17,0,0,0],"Uneven Psi":[18,0,0,0],"S1 Timeout":[19,0,0,0],"S2 Timeout":[20,0,0,0],"TT-810":[21,0,0,0],\
+	"TT-809":[22,0,0,0],"TT-715":[23,0,0,0],"TT-520":[24,0,0,0],"TT-521":[25,0,0,0],"PT-519":[26,0,0,0],"PT-407":[27,0,0,0],\
+	"PT-410":[28,0,0,0],"PT-113":[29,0,0,0]
 }
 
-#[data,prevData,label#,circle#,bit#,side]
-devices={"PM-904":[0,0,0,0,1],"PT-911":[0,0,0,1,1],"PT-716":[0,0,0,2,1],"PT-712":[0,0,0,3,2],"PT-519":[0,0,0,4,2],"PT-407":[0,0,0,5,2],"PT-410":[0,0,0,-1,2],\
-	"PT-467":[0,0,0,-1,1],"PT-561":[0,0,0,-1,2],"PT-556":[0,0,0,-1,2],"PT-555":[0,0,0,-1,2],"PT-113":[0,0,0,6,1],"PT-213":[0,0,0,7,2],\
-	"TT-917":[0,0,0,16,1],"TT-809":[0,0,0,17,1],"TT-810":[0,0,0,18,1],"TT-715":[0,0,0,19,2],"TT-520":[0,0,0,22,2],"TT-521":[0,0,0,23,2],\
-	"TT-522":[0,0,0,24,2],"TT-454":[0,0,0,13,0],"TT-107":[0,0,0,20,1],"TT-207":[0,0,0,21,2]
+#[addr,data,prevData,labelVar,labelObj,bit#,side]
+devices={"PM-904":[0,0,0,StringVar(),0,0,1],"PT-911":[9,0,0,StringVar(),0,1,1],"PT-716":[10,0,0,StringVar(),0,2,1],"PT-712":[11,0,0,StringVar(),0,3,2],"PT-519":[12,0,0,StringVar(),0,4,2],"PT-407":[13,0,0,StringVar(),0,5,2],"PT-410":[14,0,0,StringVar(),0,-1,2],\
+	"PT-467":[15,0,0,StringVar(),0,-1,1],"PT-561":[16,0,0,StringVar(),0,-1,2],"PT-556":[17,0,0,StringVar(),0,-1,2],"PT-555":[18,0,0,StringVar(),0,-1,2],"PT-113":[19,0,0,StringVar(),0,6,1],"PT-213":[20,0,0,StringVar(),0,7,2],\
+	"TT-917":[29,0,0,StringVar(),0,16,1],"TT-809":[30,0,0,StringVar(),0,17,1],"TT-810":[31,0,0,StringVar(),0,18,1],"TT-715":[32,0,0,StringVar(),0,19,2],"TT-520":[33,0,0,StringVar(),0,22,2],"TT-521":[34,0,0,StringVar(),0,23,2],\
+	"TT-522":[35,0,0,StringVar(),0,24,2],"TT-454":[36,0,0,StringVar(),0,13,1],"TT-107":[37,0,0,StringVar(),0,20,1],"TT-207":[38,0,0,StringVar(),0,21,2]
 }
-
-
-indicator1 = 0
-indicator2 = 0
-
-sigStrength = [0]*6
-
 
 canvas = Canvas(window,bg = "#DFDFDF",height = 1080,width = 1080,bd = 0,highlightthickness = 0,relief = "ridge")
 
 canvas.place(x = 0, y = 0)
 
-image_red_circle = PhotoImage(file=relative_to_assets("image_1.png"))#red Circle
-image_green_circle = PhotoImage(file=relative_to_assets("image_2.png"))#green Circle
-image_red_LED = PhotoImage(file=relative_to_assets("image_3.png"))
-image_green_LED = PhotoImage(file=relative_to_assets("image_4.png"))
-image_amber_LED = PhotoImage(file=relative_to_assets("image_11.png"))
-image_intenseifier = PhotoImage(file=relative_to_assets("image_10.png"))
-image_greenIndicator = PhotoImage(file=relative_to_assets("image_8.png"))
-image_amberIndicator = PhotoImage(file=relative_to_assets("image_7.png"))
-image_redIndicator = PhotoImage(file=relative_to_assets("image_6.png"))
-image_upArrow = PhotoImage(file=relative_to_assets("image_5.png"))
-image_downArrow = PhotoImage(file=relative_to_assets("image_9.png"))
+image_intenseifier = PhotoImage(file=relative_to_assets("intensifier.png"))
+image_upArrow = PhotoImage(file=relative_to_assets("upArrow.png"))
+image_downArrow = PhotoImage(file=relative_to_assets("downArrow.png"))
 image_signal = PhotoImage(file=relative_to_assets("signal.png"))
 window.resizable(False, False)
 window.wm_attributes('-fullscreen', 'True')
 ###############################################
 
-def page_LSR_errors(canvasData):
-	if not canvasData:
-		canvasData.append(canvas.create_text(385.0,76.0+50,anchor="nw",text="LSR Errors",fill="#000000",font=("Inter ExtraBold", 60 * -1)))
-		canvasData.append(canvas.create_rectangle(310.0,162.0+50,770.0,982.0,fill="#F0F0F0",outline=""))
-	y = 0
-	for key in LSR:
-		if LSR[key][0] and not LSR[key][2]:
-			y = 1
-		elif not LSR[key][0] and LSR[key][2]:
-			y = 1
-
-		if y:
-			y = 0
-			for key in LSR:
-				if LSR[key][0]:
-					canvas.delete(LSR[key][1])
-					LSR[key][1] = 0
-					canvas.delete(LSR[key][2])
-					LSR[key][2] = 0
-					LSR[key][1] = canvas.create_text(415.0,185.0+y+50,anchor="nw",text=key,fill="#000000",font=("Inter Medium", 40 * -1))
-					LSR[key][2] = canvas.create_image(390.0,209.0+y+50,image=image_red_LED)
-					y = y + 60
-				else:
-					canvas.delete(LSR[key][1])
-					LSR[key][1] = 0
-					canvas.delete(LSR[key][2])
-					LSR[key][2] = 0
-	
-
-def page_main(canvasData,pauseCause1,pauseCause2):
-	global indicator1
-	global indicator2
-	if not canvasData:
-		canvasData.append(canvas.create_image(201.0,596.0,image=image_intenseifier))
-		canvasData.append(canvas.create_image(879.0,596.0,image=image_intenseifier))
-		canvasData.append(canvas.create_text(310.0,122.0,anchor="nw",text="System State:",fill="#000000",font=("Inter Medium", 40 * -1)))
-		canvasData.append(canvas.create_rectangle(280.0,303.0,531.0,887.0,fill="#F0F0F0",outline=""))
-		canvasData.append(canvas.create_rectangle(549.0,303.0,800.0,887.0,fill="#F0F0F0",outline=""))
-		canvasData.append(canvas.create_image(201.0,251.0,image=image_greenIndicator))
-		canvasData.append(canvas.create_image(879.0,251.0,image=image_greenIndicator))
-
-	y1 = 0
-	y2 = 0
-	
-	for dev in devices:
-		unit = ""
-		if "TT" in dev:
-			unit = "C"
-		elif "PT" in dev:
-			unit = "psi"
-		
-			
-		if devices[dev][4] == 1 or not devices[dev][4]: #if sensor is on low side
-			if devices[dev][1]: #delete previous text/data
-				canvas.delete(devices[dev][1])
-				canvas.delete(devices[dev][2])
-			if pauseCause1:
-				if devices[dev][3] >= 0:
-					if test_bit(pauseCause1,devices[dev][3]):
-						devices[dev][1] = canvas.create_text(322.0,310.0+y1,anchor="nw",text=dev + " - " + str(devices[dev][0]) + unit,fill="#000000",font=("Inter Medium", 24 * -1))
-						devices[dev][2] = canvas.create_image(301.0,324.0+y1,image=image_amber_LED)
-						if not indicator1:
-							indicator1 = canvas.create_image(201.0,251.0,image=image_amberIndicator)
-						y1 = y1 + 36
-			else:
-				devices[dev][1] = canvas.create_text(322.0,310.0+y1,anchor="nw",text=dev + " - " + str(devices[dev][0]) + unit,fill="#000000",font=("Inter Medium", 24 * -1))
-				devices[dev][2] = canvas.create_image(301.0,324.0+y1,image=image_green_LED)
-				if indicator1:
-					canvas.delete(indicator1)
-					indicator1 = 0
-				y1 = y1 + 36
-			
-		if devices[dev][4] == 2 or not devices[dev][4]: #if sensor is on low side
-			if devices[dev][1]: #delete previous text/data
-				canvas.delete(devices[dev][1])
-				canvas.delete(devices[dev][2])
-			if pauseCause2:
-				if devices[dev][3] >= 0:
-					if test_bit(pauseCause2,devices[dev][3]):
-						devices[dev][1] = canvas.create_text(592.0,310.0+y2,anchor="nw",text=dev + " - " + str(devices[dev][0]) + unit,fill="#000000",font=("Inter Medium", 24 * -1))
-						devices[dev][2] = canvas.create_image(571.0,324.0+y2,image=image_amber_LED)
-						if not indicator2:
-							indicator2 = canvas.create_image(879.0,251.0,image=image_amberIndicator)
-						y2 = y2 + 36
-			else:
-				devices[dev][1] = canvas.create_text(592.0,310.0+y2,anchor="nw",text=dev + " - " + str(devices[dev][0]) + unit,fill="#000000",font=("Inter Medium", 24 * -1))
-				devices[dev][2] = canvas.create_image(571.0,324.0+y2,image=image_green_LED)
-				if indicator2:
-					canvas.delete(indicator2)
-					indicator2 = 0
-				y2 = y2 + 36
 def isfloat(num):
 	try:
 		float(num)
@@ -167,10 +63,13 @@ def fmap(x, a, b, c, d):
 		f = c
 	return f
 
+def _create_circle(self, x, y, r, **kwargs):
+    return self.create_oval(x-r, y-r, x+r, y+r, **kwargs)
+Canvas.create_circle = _create_circle
 
-def gui():
+def signalStrength():
 	global timer
-	if time.perf_counter() - timer > 1:
+	if time.perf_counter() - timer > 10:
 		try:
 			timer = time.perf_counter()
 			result = subprocess.run(['sudo', 'qmicli', '-d', '/dev/cdc-wdm0','--nas-get-signal-strength','2>/dev/null'], stderr=subprocess.DEVNULL,stdout=subprocess.PIPE)
@@ -179,8 +78,7 @@ def gui():
 			ECIO = re.search("ECIO:.*\n.*': '(.+?) dBm'", result).group(1)
 			SINR = re.search("SINR.* '(.+?) dB'", result).group(1)
 			if isfloat(SINR):
-				canvas.delete(sigStrength[0])
-				sigStrength[0] = canvas.create_text(470.0,49.0,anchor="nw",text=SINR,fill="#000000",font=("Inter Bold", 14 * -1))
+				canvas.itemconfig("SINR", text=SINR)
 				intSINR = float(SINR)
 				if intSINR >= 20:
 					color = "#29FF32" #green
@@ -192,11 +90,10 @@ def gui():
 					color = "#FF0000" #red
 				else:
 					color = "#000000" #black
-				canvas.delete(sigStrength[1])
-				sigStrength[1] = canvas.create_rectangle(535.0,53.0,fmap(intSINR,0,25,550,713),62.0,fill=color,outline="")
+				canvas.itemconfig("SINRrect", fill=color)
+				canvas.coords("SINRrect",535.0,53.0,fmap(intSINR,0,25,550,713),62.0)
 			if isfloat(RSSI):
-				canvas.delete(sigStrength[2])
-				sigStrength[2] = canvas.create_text(463.0,70.0,anchor="nw",text=RSSI,fill="#000000",font=("Inter Bold", 14 * -1))
+				canvas.itemconfig("RSSI", text=RSSI)
 				intRSSI = float(RSSI)*-1
 				if intRSSI <= 65:
 					color = "#29FF32" #green
@@ -208,11 +105,10 @@ def gui():
 					color = "#FF0000" #red
 				else:
 					color = "#000000" #black
-				canvas.delete(sigStrength[3])
-				sigStrength[3] = canvas.create_rectangle(535.0,74.0,fmap(100 - intRSSI,50,100,550,713),83,fill=color,outline="")
+				canvas.itemconfig("RSSIrect", fill=color)
+				canvas.coords("RSSIrect",535.0,74.0,fmap(100 - intRSSI,50,100,550,713),83)
 			if isfloat(ECIO):
-				canvas.delete(sigStrength[4])
-				sigStrength[4] = canvas.create_text(460.0,91.0,anchor="nw",text=ECIO,fill="#000000",font=("Inter Bold", 14 * -1))
+				canvas.itemconfig("ECIO", text=ECIO)
 				intECIO = float(ECIO) * -1
 				if intECIO <= 4:
 					color = "#29FF32" #green
@@ -224,10 +120,16 @@ def gui():
 					color = "#FF0000" #red
 				else:
 					color = "#000000" #black
-				canvas.delete(sigStrength[5])
-				sigStrength[5] =canvas.create_rectangle(535.0,96.0,fmap(20 - intECIO,0,20,550,713),105,fill=color,outline="")
+				canvas.itemconfig("ECIOrect", fill=color)
+				canvas.coords("ECIOrect",535.0,96.0,fmap(20 - intECIO,0,20,550,713),105)
 		except:
 			pass
+
+def hide(onOff):
+	if onOff:
+		return "normal"
+	else:
+		return "hidden"
 
 def binStr(num):
 	list1 = []
@@ -242,160 +144,222 @@ def bitRead(value,bit):
 def main():
 	try:
 		c = ModbusClient(host="58.105.200.89", port=502, unit_id=1, auto_open=True)
-		displayState = 0
-		prevDisplayState = 0
-		canvasData = []
-		greenCircle = 0
-		systemState = 0
-		DCV1A = 0
-		DCV1B = 0
-		DCV2A = 0
-		DCV2B = 0
-		state = -1
-		rect2 = canvas.create_rectangle(0,0,1080,200.0,fill="#C3C3C3",outline="")
-		rect1 = canvas.create_rectangle(0.0,0.0,1080.0,116.0,fill="#EFEFEF",outline="")
+		displayState = 1 #starting state
+		prevDisplayState = -1
+		prevSystemState = -1
+		operating = ctypes.c_uint32(0).value
+		pauseCauseLow = ctypes.c_uint32(0).value
+		pauseCauseHigh = ctypes.c_uint32(0).value
+		LSRword = ctypes.c_uint32(0).value
+		prevLSRword = -1
 		
-		greenCircle = canvas.create_image(540.0,540.0,image=image_green_circle)
-		redCircle = canvas.create_image(540.0,540.0,image=image_red_circle)
-		canvas.create_text(419.0,49.0,anchor="nw",text="SINR (",fill="#000000",font=("Inter Bold", 14 * -1))
-		canvas.create_text(494.0,49.0,anchor="nw",text="dB):",fill="#000000",font=("Inter Bold", 14 * -1))
-		canvas.create_text(419.0,70.0,anchor="nw",text="RSSI (",fill="#000000",font=("Inter Bold", 14 * -1))
-		canvas.create_text(488.0,70.0,anchor="nw",text="dBm):",fill="#000000",font=("Inter Bold", 14 * -1))
-		canvas.create_text(419.0,91.0,anchor="nw",text="ECIO(",fill="#000000",font=("Inter Bold", 14 * -1))
-		canvas.create_text(488.0,91.0,anchor="nw",text="dBm):",fill="#000000",font=("Inter Bold", 14 * -1))
+		canvas.create_rectangle(0,0,1080,230.0,tags="header",fill="#C3C3C3",outline="")
+		canvas.create_rectangle(0.0,0.0,1080.0,116.0,tags="header",fill="#EFEFEF",outline="")
+		canvas.create_text(540,150,anchor="center",text="System State:",tags="systemState",fill="#000000",font=("Inter Medium", 40 * -1))
+		canvas.create_text(419.0,49.0,anchor="nw",text="SINR (",tags="signalStrength",fill="#000000",font=("Inter Bold", 14 * -1))
+		canvas.create_text(470.0,49.0,anchor="nw",text="N/A",tags=("signalStrength","SINR"),fill="#000000",font=("Inter Bold", 14 * -1))
+		canvas.create_text(494.0,49.0,anchor="nw",text="dB):",tags="signalStrength",fill="#000000",font=("Inter Bold", 14 * -1))
+		canvas.create_rectangle(535.0,53.0,550,62.0,fill="black",tags=("signalStrength","SINRrect"),outline="")
+		canvas.create_text(419.0,70.0,anchor="nw",text="RSSI (",tags="signalStrength",fill="#000000",font=("Inter Bold", 14 * -1))
+		canvas.create_text(463.0,70.0,anchor="nw",text="N/A",tags=("signalStrength","RSSI"),fill="#000000",font=("Inter Bold", 14 * -1))
+		canvas.create_text(488.0,70.0,anchor="nw",text="dBm):",tags="signalStrength",fill="#000000",font=("Inter Bold", 14 * -1))
+		canvas.create_rectangle(535.0,74.0,550,83,fill="black",tags=("signalStrength","RSSIrect"),outline="")
+		canvas.create_text(419.0,91.0,anchor="nw",text="ECIO(",tags="signalStrength",fill="#000000",font=("Inter Bold", 14 * -1))
+		canvas.create_text(460.0,91.0,anchor="nw",text="N/A",tags=("signalStrength","ECIO"),fill="#000000",font=("Inter Bold", 14 * -1))
+		canvas.create_text(488.0,91.0,anchor="nw",text="dBm):",tags="signalStrength",fill="#000000",font=("Inter Bold", 14 * -1))
+		canvas.create_rectangle(535.0,96.0,550,105,fill="black",tags=("signalStrength","ECIOrect"),outline="")
+		canvas.create_image(390.0,78.0,tags="signalStrength",image=image_signal)
+
+		canvas.create_circle(540, 540, 530,tags="outerCircle", fill="", outline="red", width=30)
+
+		for dev in devices:
+			devices[dev][4] = Label(canvas, bg='#F0F0F0',textvariable=devices[dev][3])
+			devices[dev][4].configure(font="{Inter} 18 {}")
+
 		clock = StringVar()
 		date = StringVar()
 		clockLabel = Label(window, bg='#C3C3C3',textvariable=clock)
-		clockLabel.place(anchor="nw", x=768, y=166)
+		clockLabel.place(anchor="nw", x=778, y=186)
 		clockLabel.configure(font="{Inter} 16 {}")
 
 		dateLabel = Label(window, bg='#C3C3C3',textvariable=date)
-		dateLabel.place(anchor="nw", x=186, y=166)
+		dateLabel.place(anchor="nw", x=186, y=186)
 		dateLabel.configure(font="{Inter} 16 {}")
-		signal = canvas.create_image(390.0,78.0,image=image_signal)
-
+		centerLow = 405
+		centerHigh = 672
 		while True:
-			gui()
+			signalStrength()
 			now = datetime.datetime.now()
 			today = datetime.datetime.today()
 			date.set(today.strftime("%B %d, %Y"))
 			clock.set(now.strftime("%H:%M:%S"))
 			data = c.read_holding_registers(0, 100)
-			#settings = c.read_holding_registers(2001, 100)
-			operating = ctypes.c_uint32(0).value
-			operating |= (data[92] << 16) 
+			# with open('c200.txt','r') as f:
+			# 	data = []
+			# 	for line in f:
+			# 		try:
+			# 			data.append(int(line.strip()))
+			# 		except:
+			# 			data.append(0)
+
+			if not len(data) >= 100:
+				continue
+			operating = data[92] << 16
 			operating |= data[91]
 
-			pauseCauseLow = ctypes.c_uint32(0).value
-			pauseCauseLow |= (data[96] << 16) 
+			pauseCauseLow = data[96] << 16
 			pauseCauseLow |= data[95]
 
-			pauseCauseHigh = ctypes.c_uint32(0).value
-			pauseCauseHigh |= (data[98] << 16) 
+			pauseCauseHigh = data[98] << 16
 			pauseCauseHigh |= data[97]
 
+			LSRword = data[90] << 16
+			LSRword |= data[89]
 			systemState = data[1]
-			i = 0
+
 			for key in LSR:
-				LSR[key][0] = bitRead((data[90] << 16) | data[89],i)
-				i = i + 1
-			
-			i = 10
+				LSR[key][1] = bitRead(LSRword,LSR[key][0])
+
 			for dev in devices:
-				devices[dev][0] = data[i]
-				if i == 21:
-					i = i + 9
-				else:
-					i = i + 1
-			
-			if not data[89] and not greenCircle:
-				greenCircle = canvas.create_image(540.0,540.0,image=image_green_circle)
-				if redCircle:
-					canvas.delete(redCircle)
-			elif data[89] and greenCircle:
-				canvas.delete("all")
-				canvas.create_rectangle(0,0,1080,200.0,fill="#C3C3C3",outline="")
-				canvas.create_rectangle(0.0,0.0,1080.0,116.0,fill="#EFEFEF",outline="")
-				signal = canvas.create_image(390.0,78.0,image=image_signal)
-				redCircle = canvas.create_image(540.0,540.0,image=image_red_circle)
-				canvas.create_text(419.0,49.0,anchor="nw",text="SINR (",fill="#000000",font=("Inter Bold", 14 * -1))
-				canvas.create_text(494.0,49.0,anchor="nw",text="dB):",fill="#000000",font=("Inter Bold", 14 * -1))
-				canvas.create_text(419.0,70.0,anchor="nw",text="RSSI (",fill="#000000",font=("Inter Bold", 14 * -1))
-				canvas.create_text(488.0,70.0,anchor="nw",text="dBm):",fill="#000000",font=("Inter Bold", 14 * -1))
-				canvas.create_text(419.0,91.0,anchor="nw",text="ECIO(",fill="#000000",font=("Inter Bold", 14 * -1))
-				canvas.create_text(488.0,91.0,anchor="nw",text="dBm):",fill="#000000",font=("Inter Bold", 14 * -1))
-				greenCircle = 0
-				displayState = 1
+				devices[dev][1] = ctypes.c_int16(data[devices[dev][0]]).value
 
-			
+			if systemState != prevSystemState:
+				if systemState == 0:
+					canvas.itemconfig("outerCircle", outline="red")
+					canvas.itemconfig("systemState", text="System State: STOP")
+				elif systemState == 1:
+					canvas.itemconfig("outerCircle", outline="orange")
+					canvas.itemconfig("systemState", text="System State: IDLE")
+				elif systemState == 2:
+					canvas.itemconfig("outerCircle", outline="orange")
+					canvas.itemconfig("systemState", text="System State: STANDBY")
+				elif systemState == 3:
+					canvas.itemconfig("outerCircle", outline="green")
+					canvas.itemconfig("systemState", text="System State: START")
+				elif systemState == 4:
+					canvas.itemconfig("outerCircle", outline="green")
+					canvas.itemconfig("systemState", text="System State: RUN")
+				prevSystemState = systemState
+
+			#################################
+			if displayState != prevDisplayState:
+				if displayState == 1:
+					canvas.delete("mainPage")
+					for dev in devices:
+						devices[dev][4].place(anchor="nw", x=0, y=0)
+					
+					canvas.create_rectangle(310.0,242,770.0,882.0,tags="lsrPage",fill="#F0F0F0",outline="red",width=10)
+					canvas.create_text(540.0,285,anchor="center",text="  LSR Errors  ",tags="lsrPage",fill="#000000",font=("Inter ExtraBold", 50 * -1))
+					canvas.create_line(400,310,685,310,width=5,tags="lsrPage",fill="#000000")
+					canvas.create_rectangle(0,900,1080,970,tags="lsrPage",fill="orange",outline="black",width=10)
+					canvas.create_text(540.0,935,anchor="center",text="",tags=("lsrPage","LSRwarning"),fill="#000000",font=("Inter ExtraBold", 40 * -1))
+					canvas.tag_raise("outerCircle")
+					
+
+				elif displayState == 2:
+					canvas.delete("lsrPage")
+					canvas.create_image(201.0,596.0,tags="mainPage",image=image_intenseifier)
+					canvas.create_image(879.0,596.0,tags="mainPage",image=image_intenseifier)
+					canvas.create_rectangle(280.0,303.0,531.0,887.0,tags=("mainPage","outlineLow"),fill="#F0F0F0",outline="green",width=10)
+					canvas.create_rectangle(549.0,303.0,800.0,887.0,tags=("mainPage","outlineHigh"),fill="#F0F0F0",outline="green",width=10)
+					canvas.create_text(centerLow,275,anchor="center",text="LOW",tags=("mainPage"),fill="#000000",font=("Inter Medium", 40 * -1))
+					canvas.create_text(centerHigh,275,anchor="center",text="HIGH",tags=("mainPage"),fill="#000000",font=("Inter Medium", 40 * -1))
+					canvas.create_image(201.0,743.0,tags=("mainPage","DCV1A"),image=image_downArrow)
+					canvas.create_image(201.0,452.0,tags=("mainPage","DCV1B"),image=image_upArrow)
+					canvas.create_image(879.0,743.0,tags=("mainPage","DCV2A"),image=image_downArrow)
+					canvas.create_image(879.0,452.0,tags=("mainPage","DCV2B"),image=image_upArrow)
+					canvas.create_rectangle(0,910,1080,980,tags=("mainPage","MAINwarningRect"),state="hidden",fill="white",outline="green",width=10)
+					canvas.create_text(540.0,945,anchor="center",text="",tags=("mainPage","MAINwarning"),state="hidden",fill="#000000",font=("Inter ExtraBold", 40 * -1))
+					canvas.tag_raise("outerCircle")
+				prevDisplayState = displayState
+			#################################
 			if displayState == 1:
-				if displayState != prevDisplayState:
-					for can in canvasData:
-						canvas.delete(can)
-					canvasData = []
-					prevDisplayState = displayState
-				page_LSR_errors(canvasData)
-				if not data[89]:
-					displayState = 2
+				if LSRword != prevLSRword:
+					prevLSRword = LSRword
+					canvas.delete("lsrData")
+					if not LSRword:
+						displayState = 2
+						continue
+					y = 0
 
-
+					if LSR["E-STOP"][1]:
+						canvas.itemconfig("LSRwarning",text="Pull ESTOP button to continue.")
+					elif not LSR["Schmersal"][1] and not LSR["Coolant Flow"][1]:
+						canvas.itemconfig("LSRwarning",text="Push red button to clear errors.")
+					else:
+						canvas.itemconfig("LSRwarning",text="Hold amber button to continue.")
+					for key in LSR:
+						if LSR[key][1]:
+							canvas.create_text(540.0,345.0+y,anchor="center",text=key,tags=("lsrData","lsrPage"),fill="#000000",font=("Inter Medium", 40 * -1))
+							y += 60
+							#figure out a way to cycle between pages when there are more than 10 errors
 			elif displayState == 2:
-				if displayState != prevDisplayState:
-					for can in canvasData:
-						canvas.delete(can)
-					canvasData = []
-					prevDisplayState = displayState
-				page_main(canvasData,pauseCauseLow,pauseCauseHigh)
-				if state != data[1]:
-					stateMsg = ""
-					state = data[1]
-					if systemState:
-						canvas.delete(systemState)
-					if data[1] == 0:
-						stateMsg = "STOP"
-					elif data[1] == 1:
-						stateMsg = "IDLE"
-					elif data[1] == 2:
-						stateMsg = "STANDBY"
-					elif data[1] == 3:
-						stateMsg = "START"
-					elif data[1] == 4:
-						stateMsg = "RUN"
-					systemState = canvas.create_text(600.0,122.0,anchor="nw",text=stateMsg,fill="#000000",font=("Inter Bold", 40 * -1))
+				if LSRword:
+						displayState = 1
+						continue
+				if pauseCauseHigh:
+					canvas.itemconfig("outlineHigh", outline="orange")
+				else:
+					canvas.itemconfig("outlineHigh", outline="green")
+				if pauseCauseLow:
+					canvas.itemconfig("outlineLow", outline="orange")
+				else:
+					canvas.itemconfig("outlineLow", outline="green")
+				y1 = 0
+				y2 = 0
 
-				if test_bit(operating,1) and not DCV1A:
-					DCV1A = canvas.create_image(201.0,743.0,image=image_upArrow)
-				if not test_bit(operating,1) and DCV1A:
-					canvas.delete(DCV1A)
-					DCV1A = 0
+				canvas.itemconfig("DCV1A",state=hide(test_bit(operating,1)))
+				canvas.itemconfig("DCV1B",state=hide(test_bit(operating,2)))
+				canvas.itemconfig("DCV2A",state=hide(test_bit(operating,3)))
+				canvas.itemconfig("DCV2B",state=hide(test_bit(operating,4)))
 
-				if test_bit(operating,2) and not DCV1B:
-					DCV1B = canvas.create_image(201.0,452.0,image=image_downArrow)
-				if not test_bit(operating,2) and DCV1B:
-					canvas.delete(DCV1B)
-					DCV1B = 0
+				if systemState < 2:
+					canvas.itemconfig("MAINwarning",state="normal",text="Press green button to run.")
+					canvas.itemconfig("MAINwarningRect",state="normal")
+				else:
+					canvas.itemconfig("MAINwarning",state="hidden")
+					canvas.itemconfig("MAINwarningRect",state="hidden")
 
-				if test_bit(operating,3) and not DCV2A:
-					DCV2A = canvas.create_image(879.0,743.0,image=image_upArrow)
-				if not test_bit(operating,3) and DCV2A:
-					canvas.delete(DCV2A)
-					DCV2A = 0
-
-				if test_bit(operating,4) and not DCV2B:
-					DCV2B = canvas.create_image(879.0,452.0,image=image_downArrow)
-				if not test_bit(operating,4) and DCV2B:
-					canvas.delete(DCV2B)
-					DCV2B = 0
-
+				for dev in devices:
+					unit = ""
+					if "TT" in dev:
+						unit = "C"
+					elif "PT" in dev:
+						unit = "psi"
+					if devices[dev][6] == 1: #if sensor is on low side
+						if pauseCauseLow:
+							if test_bit(pauseCauseLow,devices[dev][5]):
+								devices[dev][3].set(dev+": "+ str(devices[dev][1])+unit)
+								devices[dev][4].place(anchor="center", x=centerLow, y=325+y1)
+								y1 += 35
+							else:
+								devices[dev][4].place(anchor="center", x=0, y=0)
+						else:
+							devices[dev][3].set(dev+": "+ str(devices[dev][1])+unit)
+							devices[dev][4].place(anchor="center", x=centerLow, y=325+y1)
+							y1 += 35
+					if devices[dev][6] == 2: #if sensor is on high side
+						if pauseCauseHigh:
+							if test_bit(pauseCauseHigh,devices[dev][5]):
+								devices[dev][3].set(dev+": "+str(devices[dev][1]) + unit)
+								devices[dev][4].place(anchor="center", x=centerHigh, y=325+y2)
+								y2 += 35
+							else:
+								devices[dev][4].place(anchor="center", x=0, y=0)
+						else:
+							devices[dev][3].set(dev+": "+ str(devices[dev][1])+unit)
+							devices[dev][4].place(anchor="center", x=centerHigh, y=325+y2)
+							y2 += 35
 
 			window.update()
 			window.update_idletasks()
+	except TclError:
+		print("User Manually Exitied")
 	except KeyboardInterrupt:
 		pass
 	except Exception as e:
 		print(e)
-
-			
+		os.execv(sys.argv[0], sys.argv)
 
 if __name__ == '__main__':
 	main()
