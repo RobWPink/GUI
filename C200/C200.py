@@ -143,7 +143,9 @@ def bitRead(value,bit):
 
 def main():
 	try:
-		c = ModbusClient(host="58.105.200.89", port=502, unit_id=1, auto_open=True)
+		mb = []
+		for i in range(1,5):
+			mb.append(ModbusClient(host="127.0.0.1", port=502, unit_id=i, timeout=1,auto_open=True))
 		displayState = 1 #starting state
 		prevDisplayState = -1
 		prevSystemState = -1
@@ -152,7 +154,7 @@ def main():
 		pauseCauseHigh = ctypes.c_uint32(0).value
 		LSRword = ctypes.c_uint32(0).value
 		prevLSRword = -1
-		
+		cnt = 0
 		canvas.create_rectangle(0,0,1080,230.0,tags="header",fill="#C3C3C3",outline="")
 		canvas.create_rectangle(0.0,0.0,1080.0,116.0,tags="header",fill="#EFEFEF",outline="")
 		canvas.create_text(540,150,anchor="center",text="System State:",tags="systemState",fill="#000000",font=("Inter Medium", 40 * -1))
@@ -187,22 +189,40 @@ def main():
 		dateLabel.configure(font="{Inter} 16 {}")
 		centerLow = 405
 		centerHigh = 672
+		tmr = time.perf_counter()
+		canvas.create_text(500,950,anchor="center",text="C200 1",tags="C200Num",fill="#000000",font=("Inter ExtraBold", 50 * -1))
 		while True:
 			signalStrength()
 			now = datetime.datetime.now()
 			today = datetime.datetime.today()
 			date.set(today.strftime("%B %d, %Y"))
 			clock.set(now.strftime("%H:%M:%S"))
-			#data = c.read_holding_registers(0, 100)
-			with open('c200.txt','r') as f:
-				data = []
-				for line in f:
-					try:
-						data.append(int(line.strip()))
-					except:
-						data.append(0)
+			if (time.perf_counter() - tmr) > 10:
+				if cnt >= 3:
+					cnt = 0
+				else:
+					cnt = cnt + 1
+				canvas.itemconfig("C200Num", text="C200 "+str(cnt+1))
+				tmr = time.perf_counter()
+			try:
+				data = mb[cnt].read_holding_registers(0, 100)
+				# with open('c200.txt','r') as f:
+				# 	data = []
+				# 	for line in f:
+				# 		try:
+				# 			data.append(int(line.strip()))
+				# 		except:
+				# 			data.append(0)
 
-			if not len(data) >= 100:
+				if not len(data) >= 100:
+					raise Exception("data read failure")
+			except:
+				if cnt >= 3:
+					cnt = 0
+				else:
+					cnt = cnt + 1
+				canvas.itemconfig("C200Num", text="C200 "+str(cnt+1))
+				tmr = time.perf_counter()
 				continue
 			operating = data[92] << 16
 			operating |= data[91]
