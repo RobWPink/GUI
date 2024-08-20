@@ -190,7 +190,7 @@ def main():
 		centerLow = 405
 		centerHigh = 672
 		tmr = time.perf_counter()
-		canvas.create_text(500,950,anchor="center",text="C200 1",tags="C200Num",fill="#000000",font=("Inter ExtraBold", 50 * -1))
+		canvas.create_text(540,1020,anchor="center",text="C400-1",tags="C200Num",fill="#000000",font=("Inter ExtraBold", 50 * -1))
 		while True:
 			signalStrength()
 			now = datetime.datetime.now()
@@ -202,7 +202,15 @@ def main():
 					cnt = 0
 				else:
 					cnt = cnt + 1
-				canvas.itemconfig("C200Num", text="C200 "+str(cnt+1))
+				if cnt == 0:
+					canvas.itemconfig("C200Num", text="C400-1")
+				elif cnt == 1:
+					canvas.itemconfig("C200Num", text="C400-2")
+				elif cnt == 2:
+					canvas.itemconfig("C200Num", text="C200-1")
+				elif cnt == 3:
+					canvas.itemconfig("C200Num", text="C200-2")
+				
 				tmr = time.perf_counter()
 			try:
 				data = mb[cnt].read_holding_registers(0, 100)
