@@ -193,14 +193,14 @@ def main():
 			today = datetime.datetime.today()
 			date.set(today.strftime("%B %d, %Y"))
 			clock.set(now.strftime("%H:%M:%S"))
-			data = c.read_holding_registers(0, 100)
-			# with open('c200.txt','r') as f:
-			# 	data = []
-			# 	for line in f:
-			# 		try:
-			# 			data.append(int(line.strip()))
-			# 		except:
-			# 			data.append(0)
+			#data = c.read_holding_registers(0, 100)
+			with open('c200.txt','r') as f:
+				data = []
+				for line in f:
+					try:
+						data.append(int(line.strip()))
+					except:
+						data.append(0)
 
 			if not len(data) >= 100:
 				continue
