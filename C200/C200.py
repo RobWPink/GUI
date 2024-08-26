@@ -192,195 +192,198 @@ def main():
 		tmr = time.perf_counter()
 		canvas.create_text(540,1020,anchor="center",text="C400-1",tags="C200Num",fill="#000000",font=("Inter ExtraBold", 50 * -1))
 		while True:
-			signalStrength()
-			now = datetime.datetime.now()
-			today = datetime.datetime.today()
-			date.set(today.strftime("%B %d, %Y"))
-			clock.set(now.strftime("%H:%M:%S"))
-			if (time.perf_counter() - tmr) > 10:
-				if cnt >= 3:
-					cnt = 0
-				else:
-					cnt = cnt + 1
-				if cnt == 0:
-					canvas.itemconfig("C200Num", text="C400-1")
-				elif cnt == 1:
-					canvas.itemconfig("C200Num", text="C400-2")
-				elif cnt == 2:
-					canvas.itemconfig("C200Num", text="C200-1")
-				elif cnt == 3:
-					canvas.itemconfig("C200Num", text="C200-2")
-				
-				tmr = time.perf_counter()
 			try:
-				data = mb[cnt].read_holding_registers(0, 100)
-				# with open('c200.txt','r') as f:
-				# 	data = []
-				# 	for line in f:
-				# 		try:
-				# 			data.append(int(line.strip()))
-				# 		except:
-				# 			data.append(0)
-
-				if not len(data) >= 100:
-					raise Exception("data read failure")
-			except:
-				if cnt >= 3:
-					cnt = 0
-				else:
-					cnt = cnt + 1
-				canvas.itemconfig("C200Num", text="C200 "+str(cnt+1))
-				tmr = time.perf_counter()
-				continue
-			operating = data[92] << 16
-			operating |= data[91]
-
-			pauseCauseLow = data[96] << 16
-			pauseCauseLow |= data[95]
-
-			pauseCauseHigh = data[98] << 16
-			pauseCauseHigh |= data[97]
-
-			LSRword = data[90] << 16
-			LSRword |= data[89]
-			systemState = data[1]
-
-			for key in LSR:
-				LSR[key][1] = bitRead(LSRword,LSR[key][0])
-
-			for dev in devices:
-				devices[dev][1] = ctypes.c_int16(data[devices[dev][0]]).value
-
-			if systemState != prevSystemState:
-				if systemState == 0:
-					canvas.itemconfig("outerCircle", outline="red")
-					canvas.itemconfig("systemState", text="System State: STOP")
-				elif systemState == 1:
-					canvas.itemconfig("outerCircle", outline="orange")
-					canvas.itemconfig("systemState", text="System State: IDLE")
-				elif systemState == 2:
-					canvas.itemconfig("outerCircle", outline="orange")
-					canvas.itemconfig("systemState", text="System State: STANDBY")
-				elif systemState == 3:
-					canvas.itemconfig("outerCircle", outline="green")
-					canvas.itemconfig("systemState", text="System State: START")
-				elif systemState == 4:
-					canvas.itemconfig("outerCircle", outline="green")
-					canvas.itemconfig("systemState", text="System State: RUN")
-				prevSystemState = systemState
-
-			#################################
-			if displayState != prevDisplayState:
-				if displayState == 1:
-					canvas.delete("mainPage")
-					for dev in devices:
-						devices[dev][4].place(anchor="nw", x=0, y=0)
-					
-					canvas.create_rectangle(310.0,242,770.0,882.0,tags="lsrPage",fill="#F0F0F0",outline="red",width=10)
-					canvas.create_text(540.0,285,anchor="center",text="  LSR Errors  ",tags="lsrPage",fill="#000000",font=("Inter ExtraBold", 50 * -1))
-					canvas.create_line(400,310,685,310,width=5,tags="lsrPage",fill="#000000")
-					canvas.create_rectangle(0,900,1080,970,tags="lsrPage",fill="orange",outline="black",width=10)
-					canvas.create_text(540.0,935,anchor="center",text="",tags=("lsrPage","LSRwarning"),fill="#000000",font=("Inter ExtraBold", 40 * -1))
-					canvas.tag_raise("outerCircle")
-					
-
-				elif displayState == 2:
-					canvas.delete("lsrPage")
-					canvas.create_image(201.0,596.0,tags="mainPage",image=image_intenseifier)
-					canvas.create_image(879.0,596.0,tags="mainPage",image=image_intenseifier)
-					canvas.create_rectangle(280.0,303.0,531.0,887.0,tags=("mainPage","outlineLow"),fill="#F0F0F0",outline="green",width=10)
-					canvas.create_rectangle(549.0,303.0,800.0,887.0,tags=("mainPage","outlineHigh"),fill="#F0F0F0",outline="green",width=10)
-					canvas.create_text(centerLow,275,anchor="center",text="LOW",tags=("mainPage"),fill="#000000",font=("Inter Medium", 40 * -1))
-					canvas.create_text(centerHigh,275,anchor="center",text="HIGH",tags=("mainPage"),fill="#000000",font=("Inter Medium", 40 * -1))
-					canvas.create_image(201.0,743.0,tags=("mainPage","DCV1A"),image=image_downArrow)
-					canvas.create_image(201.0,452.0,tags=("mainPage","DCV1B"),image=image_upArrow)
-					canvas.create_image(879.0,743.0,tags=("mainPage","DCV2A"),image=image_downArrow)
-					canvas.create_image(879.0,452.0,tags=("mainPage","DCV2B"),image=image_upArrow)
-					canvas.create_rectangle(0,910,1080,980,tags=("mainPage","MAINwarningRect"),state="hidden",fill="white",outline="green",width=10)
-					canvas.create_text(540.0,945,anchor="center",text="",tags=("mainPage","MAINwarning"),state="hidden",fill="#000000",font=("Inter ExtraBold", 40 * -1))
-					canvas.tag_raise("outerCircle")
-				prevDisplayState = displayState
-			#################################
-			if displayState == 1:
-				if LSRword != prevLSRword:
-					prevLSRword = LSRword
-					canvas.delete("lsrData")
-					if not LSRword:
-						displayState = 2
-						continue
-					y = 0
-
-					if LSR["E-STOP"][1]:
-						canvas.itemconfig("LSRwarning",text="Pull ESTOP button to continue.")
-					elif not LSR["Schmersal"][1] and not LSR["Coolant Flow"][1]:
-						canvas.itemconfig("LSRwarning",text="Push red button to clear errors.")
+				signalStrength()
+				now = datetime.datetime.now()
+				today = datetime.datetime.today()
+				date.set(today.strftime("%B %d, %Y"))
+				clock.set(now.strftime("%H:%M:%S"))
+				if (time.perf_counter() - tmr) > 10:
+					if cnt >= 3:
+						cnt = 0
 					else:
-						canvas.itemconfig("LSRwarning",text="Hold amber button to continue.")
-					for key in LSR:
-						if LSR[key][1]:
-							canvas.create_text(540.0,345.0+y,anchor="center",text=key,tags=("lsrData","lsrPage"),fill="#000000",font=("Inter Medium", 40 * -1))
-							y += 60
-							#figure out a way to cycle between pages when there are more than 10 errors
-			elif displayState == 2:
-				if LSRword:
-						displayState = 1
-						continue
-				if pauseCauseHigh:
-					canvas.itemconfig("outlineHigh", outline="orange")
-				else:
-					canvas.itemconfig("outlineHigh", outline="green")
-				if pauseCauseLow:
-					canvas.itemconfig("outlineLow", outline="orange")
-				else:
-					canvas.itemconfig("outlineLow", outline="green")
-				y1 = 0
-				y2 = 0
+						cnt = cnt + 1
+					if cnt == 0:
+						canvas.itemconfig("C200Num", text="C400-1")
+					elif cnt == 1:
+						canvas.itemconfig("C200Num", text="C400-2")
+					elif cnt == 2:
+						canvas.itemconfig("C200Num", text="C200-1")
+					elif cnt == 3:
+						canvas.itemconfig("C200Num", text="C200-2")
+					
+					tmr = time.perf_counter()
+				try:
+					data = mb[cnt].read_holding_registers(0, 100)
+					# with open('c200.txt','r') as f:
+					# 	data = []
+					# 	for line in f:
+					# 		try:
+					# 			data.append(int(line.strip()))
+					# 		except:
+					# 			data.append(0)
 
-				canvas.itemconfig("DCV1A",state=hide(test_bit(operating,1)))
-				canvas.itemconfig("DCV1B",state=hide(test_bit(operating,2)))
-				canvas.itemconfig("DCV2A",state=hide(test_bit(operating,3)))
-				canvas.itemconfig("DCV2B",state=hide(test_bit(operating,4)))
+					if not len(data) >= 100:
+						raise Exception("data read failure")
+				except:
+					if cnt >= 3:
+						cnt = 0
+					else:
+						cnt = cnt + 1
+					canvas.itemconfig("C200Num", text="C200 "+str(cnt+1))
+					tmr = time.perf_counter()
+					continue
+				operating = data[92] << 16
+				operating |= data[91]
 
-				if systemState < 2:
-					canvas.itemconfig("MAINwarning",state="normal",text="Press green button to run.")
-					canvas.itemconfig("MAINwarningRect",state="normal")
-				else:
-					canvas.itemconfig("MAINwarning",state="hidden")
-					canvas.itemconfig("MAINwarningRect",state="hidden")
+				pauseCauseLow = data[96] << 16
+				pauseCauseLow |= data[95]
+
+				pauseCauseHigh = data[98] << 16
+				pauseCauseHigh |= data[97]
+
+				LSRword = data[90] << 16
+				LSRword |= data[89]
+				systemState = data[1]
+
+				for key in LSR:
+					LSR[key][1] = bitRead(LSRword,LSR[key][0])
 
 				for dev in devices:
-					unit = ""
-					if "TT" in dev:
-						unit = "C"
-					elif "PT" in dev:
-						unit = "psi"
-					if devices[dev][6] == 1: #if sensor is on low side
-						if pauseCauseLow:
-							if test_bit(pauseCauseLow,devices[dev][5]):
+					devices[dev][1] = ctypes.c_int16(data[devices[dev][0]]).value
+
+				if systemState != prevSystemState:
+					if systemState == 0:
+						canvas.itemconfig("outerCircle", outline="red")
+						canvas.itemconfig("systemState", text="System State: STOP")
+					elif systemState == 1:
+						canvas.itemconfig("outerCircle", outline="orange")
+						canvas.itemconfig("systemState", text="System State: IDLE")
+					elif systemState == 2:
+						canvas.itemconfig("outerCircle", outline="orange")
+						canvas.itemconfig("systemState", text="System State: STANDBY")
+					elif systemState == 3:
+						canvas.itemconfig("outerCircle", outline="green")
+						canvas.itemconfig("systemState", text="System State: START")
+					elif systemState == 4:
+						canvas.itemconfig("outerCircle", outline="green")
+						canvas.itemconfig("systemState", text="System State: RUN")
+					prevSystemState = systemState
+
+				#################################
+				if displayState != prevDisplayState:
+					if displayState == 1:
+						canvas.delete("mainPage")
+						for dev in devices:
+							devices[dev][4].place(anchor="nw", x=0, y=0)
+						
+						canvas.create_rectangle(310.0,242,770.0,882.0,tags="lsrPage",fill="#F0F0F0",outline="red",width=10)
+						canvas.create_text(540.0,285,anchor="center",text="  LSR Errors  ",tags="lsrPage",fill="#000000",font=("Inter ExtraBold", 50 * -1))
+						canvas.create_line(400,310,685,310,width=5,tags="lsrPage",fill="#000000")
+						canvas.create_rectangle(0,900,1080,970,tags="lsrPage",fill="orange",outline="black",width=10)
+						canvas.create_text(540.0,935,anchor="center",text="",tags=("lsrPage","LSRwarning"),fill="#000000",font=("Inter ExtraBold", 40 * -1))
+						canvas.tag_raise("outerCircle")
+						
+
+					elif displayState == 2:
+						canvas.delete("lsrPage")
+						canvas.create_image(201.0,596.0,tags="mainPage",image=image_intenseifier)
+						canvas.create_image(879.0,596.0,tags="mainPage",image=image_intenseifier)
+						canvas.create_rectangle(280.0,303.0,531.0,887.0,tags=("mainPage","outlineLow"),fill="#F0F0F0",outline="green",width=10)
+						canvas.create_rectangle(549.0,303.0,800.0,887.0,tags=("mainPage","outlineHigh"),fill="#F0F0F0",outline="green",width=10)
+						canvas.create_text(centerLow,275,anchor="center",text="LOW",tags=("mainPage"),fill="#000000",font=("Inter Medium", 40 * -1))
+						canvas.create_text(centerHigh,275,anchor="center",text="HIGH",tags=("mainPage"),fill="#000000",font=("Inter Medium", 40 * -1))
+						canvas.create_image(201.0,743.0,tags=("mainPage","DCV1A"),image=image_downArrow)
+						canvas.create_image(201.0,452.0,tags=("mainPage","DCV1B"),image=image_upArrow)
+						canvas.create_image(879.0,743.0,tags=("mainPage","DCV2A"),image=image_downArrow)
+						canvas.create_image(879.0,452.0,tags=("mainPage","DCV2B"),image=image_upArrow)
+						canvas.create_rectangle(0,910,1080,980,tags=("mainPage","MAINwarningRect"),state="hidden",fill="white",outline="green",width=10)
+						canvas.create_text(540.0,945,anchor="center",text="",tags=("mainPage","MAINwarning"),state="hidden",fill="#000000",font=("Inter ExtraBold", 40 * -1))
+						canvas.tag_raise("outerCircle")
+					prevDisplayState = displayState
+				#################################
+				if displayState == 1:
+					if LSRword != prevLSRword:
+						prevLSRword = LSRword
+						canvas.delete("lsrData")
+						if not LSRword:
+							displayState = 2
+							continue
+						y = 0
+
+						if LSR["E-STOP"][1]:
+							canvas.itemconfig("LSRwarning",text="Pull ESTOP button to continue.")
+						elif not LSR["Schmersal"][1] and not LSR["Coolant Flow"][1]:
+							canvas.itemconfig("LSRwarning",text="Push red button to clear errors.")
+						else:
+							canvas.itemconfig("LSRwarning",text="Hold amber button to continue.")
+						for key in LSR:
+							if LSR[key][1]:
+								canvas.create_text(540.0,345.0+y,anchor="center",text=key,tags=("lsrData","lsrPage"),fill="#000000",font=("Inter Medium", 40 * -1))
+								y += 60
+								#figure out a way to cycle between pages when there are more than 10 errors
+				elif displayState == 2:
+					if LSRword:
+							displayState = 1
+							continue
+					if pauseCauseHigh:
+						canvas.itemconfig("outlineHigh", outline="orange")
+					else:
+						canvas.itemconfig("outlineHigh", outline="green")
+					if pauseCauseLow:
+						canvas.itemconfig("outlineLow", outline="orange")
+					else:
+						canvas.itemconfig("outlineLow", outline="green")
+					y1 = 0
+					y2 = 0
+
+					canvas.itemconfig("DCV1A",state=hide(test_bit(operating,1)))
+					canvas.itemconfig("DCV1B",state=hide(test_bit(operating,2)))
+					canvas.itemconfig("DCV2A",state=hide(test_bit(operating,3)))
+					canvas.itemconfig("DCV2B",state=hide(test_bit(operating,4)))
+
+					if systemState < 2:
+						canvas.itemconfig("MAINwarning",state="normal",text="Press green button to run.")
+						canvas.itemconfig("MAINwarningRect",state="normal")
+					else:
+						canvas.itemconfig("MAINwarning",state="hidden")
+						canvas.itemconfig("MAINwarningRect",state="hidden")
+
+					for dev in devices:
+						unit = ""
+						if "TT" in dev:
+							unit = "C"
+						elif "PT" in dev:
+							unit = "psi"
+						if devices[dev][6] == 1: #if sensor is on low side
+							if pauseCauseLow:
+								if test_bit(pauseCauseLow,devices[dev][5]):
+									devices[dev][3].set(dev+": "+ str(devices[dev][1])+unit)
+									devices[dev][4].place(anchor="center", x=centerLow, y=325+y1)
+									y1 += 35
+								else:
+									devices[dev][4].place(anchor="center", x=0, y=0)
+							else:
 								devices[dev][3].set(dev+": "+ str(devices[dev][1])+unit)
 								devices[dev][4].place(anchor="center", x=centerLow, y=325+y1)
 								y1 += 35
+						if devices[dev][6] == 2: #if sensor is on high side
+							if pauseCauseHigh:
+								if test_bit(pauseCauseHigh,devices[dev][5]):
+									devices[dev][3].set(dev+": "+str(devices[dev][1]) + unit)
+									devices[dev][4].place(anchor="center", x=centerHigh, y=325+y2)
+									y2 += 35
+								else:
+									devices[dev][4].place(anchor="center", x=0, y=0)
 							else:
-								devices[dev][4].place(anchor="center", x=0, y=0)
-						else:
-							devices[dev][3].set(dev+": "+ str(devices[dev][1])+unit)
-							devices[dev][4].place(anchor="center", x=centerLow, y=325+y1)
-							y1 += 35
-					if devices[dev][6] == 2: #if sensor is on high side
-						if pauseCauseHigh:
-							if test_bit(pauseCauseHigh,devices[dev][5]):
-								devices[dev][3].set(dev+": "+str(devices[dev][1]) + unit)
+								devices[dev][3].set(dev+": "+ str(devices[dev][1])+unit)
 								devices[dev][4].place(anchor="center", x=centerHigh, y=325+y2)
 								y2 += 35
-							else:
-								devices[dev][4].place(anchor="center", x=0, y=0)
-						else:
-							devices[dev][3].set(dev+": "+ str(devices[dev][1])+unit)
-							devices[dev][4].place(anchor="center", x=centerHigh, y=325+y2)
-							y2 += 35
 
-			window.update()
-			window.update_idletasks()
+				window.update()
+				window.update_idletasks()
+			except ValueError:
+				time.sleep(0.5)
 	except TclError:
 		print("User Manually Exitied")
 	except KeyboardInterrupt:
