@@ -39,7 +39,7 @@ devices = {
 }
 reformers=[devices,devices,devices,devices]
 
-canvas = Canvas(window,bg = "#DFDFDF",height = 1080,width = 1080,bd = 0,highlightthickness = 0,relief = "ridge")
+canvas = Canvas(window,bg = "#DFDFDF",height = 2080,width = 1080,bd = 0,highlightthickness = 0,relief = "ridge")
 
 canvas.place(x = 0, y = 0)
 tog = False
@@ -190,15 +190,6 @@ def main():
 		dateLabel.place(anchor="nw", x=186, y=186)
 		dateLabel.configure(font="{Inter} 16 {}")
 
-		#tbl = Canvas(canvas,bg = "#DFDFDF",height = 200,width = 200,bd = 0,highlightthickness = 0,relief = "ridge")
-		# table = [[0]*10]*6
-		# tmr = time.perf_counter()
-		# for i in range(6):
-		# 	for j in range(10):
-		# 		table[i][j] = Entry(window, width=5, fg='blue',font=('Arial',16,'bold'))
-		# 		table[i][j].place(x=540+i*70,y=540+j*50)
-		# table[0][4].lower()
-
 		allErrors = [0,0,0,0]
 		allWarnings = [0,0,0,0]
 		tableData = {}
@@ -295,12 +286,14 @@ def main():
 				#[deviceAddr	configAddr	group#	errorBits	labelVar	data	prevData	warning	error]
 				if tableData:
 					for row in tableData:
-						canvas.itemconfig("row"+str(s),text=tableData[row][0])
+						canvas.itemconfig("row"+str(s),text=tableData[row][0],state="normal")
 						if tableData[row][1]:
 							canvas.itemconfig("row"+str(s),fill="red")
 						else:
 							canvas.itemconfig("row"+str(s),fill="orange")
 						s += 1
+					for i in range(s,10):
+						canvas.itemconfig("row"+str(i),text="",state="hidden")
 
 
 				canvas.tag_raise("outerCircle")
