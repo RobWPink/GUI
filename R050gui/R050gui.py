@@ -2,7 +2,7 @@ from pathlib import Path
 from pyModbusTCP.client import ModbusClient
 from pyModbusTCP.utils import test_bit
 from tkinter import *
-import datetime,subprocess,re,time,datetime,ctypes,os,sys
+import datetime,subprocess,re,time,datetime,ctypes,os,sys,math
 
 OUTPUT_PATH = Path(__file__).parent
 ASSETS_PATH = OUTPUT_PATH / Path(r"./assets/frame0")
@@ -37,6 +37,7 @@ devices = {
 	"PT318":[17,2930,2,8,StringVar(),0,0,0,0],"PT304":[18,2940,2,9,StringVar(),0,0,0,0],"PT420":[19,2950,2,10,StringVar(),0,0,0,0],\
 	"PMP204":[20,2960,2,11,StringVar(),0,0,0,0]
 }
+
 reformers=[devices,devices,devices,devices]
 
 canvas = Canvas(window,bg = "#DFDFDF",height = 2080,width = 1080,bd = 0,highlightthickness = 0,relief = "ridge")
@@ -177,7 +178,7 @@ def main():
 		canvas.create_text(488.0,91.0,anchor="nw",text="dBm):",tags="signalStrength",fill="#000000",font=("Inter Bold", 14 * -1))
 		canvas.create_rectangle(535.0,96.0,550,105,fill="black",tags=("signalStrength","ECIOrect"),outline="")
 		canvas.create_image(390.0,78.0,tags="signalStrength",image=image_signal)
-
+		canvas.create_text(540,1000,anchor="center",text="Page 1/1",tags="pageNum",fill="#000000",font=("Inter Medium", 25 * -1))
 		canvas.create_circle(540, 540, 530,tags="outerCircle", fill="", outline="green", width=50)
 		spaceSize = 10
 		clock = StringVar()
@@ -189,15 +190,16 @@ def main():
 		dateLabel = Label(window, bg='#C3C3C3',textvariable=date)
 		dateLabel.place(anchor="nw", x=186, y=186)
 		dateLabel.configure(font="{Inter} 16 {}")
-
+		page = 0
+		pageTmr = time.perf_counter();
 		allErrors = [0,0,0,0]
 		allWarnings = [0,0,0,0]
 		tableData = {}
 		tmr = time.perf_counter()
-		tableHeader = "Reformer#".center(spaceSize,' ')+ "Sensor".center(spaceSize,' ')+ "Value".center(spaceSize,' ')+ "Min".center(spaceSize,' ')+ "Max".center(spaceSize,' ')+ "Timer".center(spaceSize,' ')
-		canvas.create_text(540.0,300,anchor="center",text=tableHeader,tags=("tableHeader"),fill="#000000",font=("Inter ExtraBold", 30 * -1))
+		tableHeader = "Reformer#".center(spaceSize)+ "Sensor".center(spaceSize)+ "Value".center(spaceSize)+ "Min".center(spaceSize)+ "Max".center(spaceSize)+ "Timer".center(spaceSize)
+		canvas.create_text(540.0,280,anchor="center",text=tableHeader,tags=("tableHeader"),fill="#000000",font=("Inter ExtraBold", 30 * -1))
 		for i in range(10):
-			canvas.create_text(540.0,360+i*60,anchor="center",text="",tags=("row"+str(i)),fill="#000000",font=("Inter ExtraBold", 30 * -1))
+			canvas.create_text(540.0,340+i*60,anchor="center",text="",tags=("row"+str(i)),fill="#000000",font=("Inter ExtraBold", 30 * -1))
 		while True:
 			try:
 				
@@ -243,20 +245,9 @@ def main():
 					allWarnings[cnt] = 0
 
 				if not all(v == 0 for v in allErrors):
-					if time.perf_counter() - tmr > 2:
-						canvas.itemconfig("outerCircle", state=hide(tog))
-						tog = not tog
-						tmr = time.perf_counter()
 					canvas.itemconfig("outerCircle", outline="red")
 				elif not all(v == 0 for v in allWarnings):
 					canvas.itemconfig("outerCircle", outline="orange")
-					if time.perf_counter() - tmr > 2:
-						canvas.itemconfig("outerCircle", state=hide(tog))
-						if tog:
-							tog = False
-						else:
-							tog = True
-						tmr = time.perf_counter()
 				else:
 					canvas.itemconfig("outerCircle", outline="green")
 
@@ -276,25 +267,37 @@ def main():
 							timeout = extraData[1] #highTimeout
 						timer = str(extraData[2])+"s/"+str(timeout)+"s"
 						#reformer#, sensor, value, min, max, timer/timeout
-						tableData[str(cnt)+dev] = [str(cnt+1).center(spaceSize,' ')+dev.center(spaceSize,' ')+str(reformers[cnt][dev][5]).center(spaceSize,' ')+str(u2s(extraData[4])).center(spaceSize,' ')+str(u2s(extraData[6])).center(spaceSize,' ') + timer.center(spaceSize,' '),reformers[cnt][dev][8]]
+						tableData[str(cnt)+dev] = [str(cnt+1).center(spaceSize+2)+"    "+dev.center(spaceSize+2)+str(reformers[cnt][dev][5]).center(spaceSize)+str(u2s(extraData[4])).center(spaceSize)+str(u2s(extraData[6])).center(spaceSize) + "  "+timer.center(spaceSize),reformers[cnt][dev][8]]
 
 					else:
 						tableData.pop(str(cnt)+dev,None)
 
 				#################################
 				s = 0
+				c = 0
 				#[deviceAddr	configAddr	group#	errorBits	labelVar	data	prevData	warning	error]
+
 				if tableData:
 					for row in tableData:
-						canvas.itemconfig("row"+str(s),text=tableData[row][0],state="normal")
-						if tableData[row][1]:
-							canvas.itemconfig("row"+str(s),fill="red")
-						else:
-							canvas.itemconfig("row"+str(s),fill="orange")
-						s += 1
-					for i in range(s,10):
-						canvas.itemconfig("row"+str(i),text="",state="hidden")
-
+						if page*10 <= c < (page+1)*10:
+							canvas.itemconfig("row"+str(s),text=tableData[row][0],state="normal")
+							if tableData[row][1]:
+								canvas.itemconfig("row"+str(s),fill="red")
+							else:
+								canvas.itemconfig("row"+str(s),fill="orange")
+							s += 1
+							canvas.itemconfig("pageNum",text="Page "+str(page+1)+"/"+str(math.ceil(len(tableData)/10)))
+						c += 1
+					if s < 9:
+						for i in range(s,10):
+							canvas.itemconfig("row"+str(i),text="",state="hidden")
+							
+				if time.perf_counter() - pageTmr > 10:
+					pageTmr = time.perf_counter()
+					if page >= math.floor(len(tableData)/10):
+						page = 0
+					else:
+						page = page + 1
 
 				canvas.tag_raise("outerCircle")
 
