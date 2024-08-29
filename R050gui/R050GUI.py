@@ -147,6 +147,7 @@ def main():
 		canvas.create_image(390.0,78.0,tags="signalStrength",image=image_signal)
 		canvas.create_text(540,1000,anchor="center",text="Page 1/1",tags="pageNum",fill="#000000",font=("Inter Medium", 25 * -1))
 		canvas.create_circle(540, 540, 530,tags="outerCircle", fill="", outline="green", width=50)
+		#canvas.create_circle(540, 540, 530,tags="innerCircle", fill="", outline="orange", width=50)
 		clock = StringVar()
 		date = StringVar()
 		clockLabel = Label(window, bg='#C3C3C3',textvariable=clock)

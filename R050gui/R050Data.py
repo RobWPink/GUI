@@ -67,9 +67,9 @@ def main():
 		mb = []
 		for i in ReformerIDs:
 			#mb.append(ModbusClient(host="127.0.0.1", port=502, unit_id=i, timeout=1,auto_open=True))
-			mb.append(ModbusClient(host="uk1.pitunnel.com", port=21792, unit_id=i, timeout=3,auto_open=True))
+			mb.append(ModbusClient(host="uk1.pitunnel.com", port=21792, unit_id=i, timeout=5,auto_open=True))
 		
-		seconds = ctypes.c_uint32(0).value	
+		seconds = [ctypes.c_uint32(0).value]*len(ReformerIDs)
 		prevSeconds = [0]*len(ReformerIDs)
 		activeReformers = [True]*len(ReformerIDs)
 		warning1 = ctypes.c_uint32(0).value
@@ -91,22 +91,25 @@ def main():
 				htop.terminate()
 				sys.exit()
 			except:
-				if cnt >= 3:
+				if cnt >= (len(ReformerIDs)-1):
 					cnt = 0
 				else:
 					cnt = cnt + 1
 				continue
 			
-			seconds = data[100-9] << 16
-			seconds |= data[99-9]
+			tmp = data[100-9] << 16
+			tmp |= data[99-9]
+			seconds[cnt] = tmp
 
-			# if time.perf_counter() - tmr > 3:
-			# 	if seconds == prevSeconds[cnt]:
-			# 		activeReformers[cnt] = False
-			# 	else:
-			# 		activeReformers[cnt] = True
-			# 		prevSeconds[cnt] = seconds
-			# 	tmr = time.perf_counter()
+			if time.perf_counter() - tmr > 60:
+				print(prevSeconds)
+				for i in range(len(ReformerIDs)):
+					if seconds[i] == prevSeconds[i]:
+						activeReformers[i] = False
+					else:
+						activeReformers[i] = True
+						prevSeconds[i] = seconds[i]
+				tmr = time.perf_counter()
 
 			if activeReformers[cnt]:
 				warning1 = data[96-9] << 16
@@ -164,13 +167,19 @@ def main():
 							tableData.pop(str(cnt)+dev,None)
 				except TypeError:
 					pass
+			
+			else:
+				for row in tableData:
+					if row[0] == str(cnt):
+						tableData.pop(row,None)
+			
 			with open('data.txt', 'w') as fd:
 				for a in tableData:
 					fd.write(tableData[a])
 			if htop.poll() != None:
 				print("GUI quit")
 				sys.exit(1)
-			if cnt >= 3:
+			if cnt >= (len(ReformerIDs)-1):
 				cnt = 0
 			else:
 				cnt = cnt + 1
