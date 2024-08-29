@@ -173,7 +173,7 @@ def main():
 					if row[0] == str(cnt):
 						tableData.pop(row,None)
 			
-			with open('data.txt', 'w') as fd:
+			with open('/home/pi/R050gui/data.txt', 'w') as fd:
 				for a in tableData:
 					fd.write(tableData[a])
 			if htop.poll() != None:
