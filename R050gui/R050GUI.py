@@ -184,7 +184,7 @@ def main():
 				date.set(today.strftime("%B %d, %Y"))
 				clock.set(now.strftime("%H:%M:%S"))
 				try:
-					with open("data.txt", "r") as file:
+					with open("/home/pi/R050gui/data.txt", "r") as file:
 						for line in file:
 							route = line.strip().split("|")  # Split each line into a list
 							tableData[route[0]+route[1]] = route
