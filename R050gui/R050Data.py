@@ -1,11 +1,11 @@
 from pyModbusTCP.client import ModbusClient
 from pyModbusTCP.utils import test_bit
-import sys, time, ctypes,subprocess
+import sys, time, ctypes,subprocess, socket
 
 htop = subprocess.Popen(["/usr/bin/python3", "/home/pi/R050gui/R050GUI.py"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
 ReformerIDs = [1,2,3,4]
-
+portNum = 21792
 #[deviceAddr	configAddr	group#	errorBits	data	prevData	warning	error]
 devices = {
 	"TT142":[29,2600,1,0,0,0,0,0],"TT301":[30,2610,1,1,0,0,0,0],"TT303":[31,2620,1,2,0,0,0,0],\
@@ -62,12 +62,12 @@ def bitRead(value,bit):
 
 def main():
 	global htop
-	
+	tmout = False
 	try:
 		mb = []
 		for i in ReformerIDs:
 			#mb.append(ModbusClient(host="127.0.0.1", port=502, unit_id=i, timeout=1,auto_open=True))
-			mb.append(ModbusClient(host="uk1.pitunnel.com", port=21792, unit_id=i, timeout=5,auto_open=True))
+			mb.append(ModbusClient(host="uk1.pitunnel.com", port=portNum, unit_id=i, timeout=5,auto_open=True))
 		
 		seconds = [ctypes.c_uint32(0).value]*len(ReformerIDs)
 		prevSeconds = [0]*len(ReformerIDs)
@@ -82,36 +82,45 @@ def main():
 		tableData = {}
 		tmr = time.perf_counter()
 		cnt = 0
+		errorMsg = ""
+		socketError = True
 		while(1):
 			try:
 				data = mb[cnt].read_holding_registers(9, 125)
-				if not len(data) >= 100:
-					raise Exception("data read failure")
+				if not mb[cnt].is_open:
+					if not socketError:
+						if not tmout:
+							tmout = True
+							continue
+						else:
+							tmout = False
+							raise RuntimeError("Reformer Read Failure")
+				else:
+					if not len(data) >= 100:
+						errorMsg = "0"
+					errorMsg = ""
+					activeReformers[cnt] = True
+					socketError = False
+			except socket.gaierror:
+				errorMsg = "2Port ("+str(portNum)+"): Connection Failure" #\n[error msg: "+str(mb[cnt].last_error_as_txt)+"]"
+				socketError = True
+			except RuntimeError:
+				activeReformers[cnt] = False
+				lst = ""
+				for i in range(4):
+					if activeReformers[i]:
+						lst = lst + str(i) + ","
+				if lst[-1] == ",":
+					lst = lst[:-1]
+				errorMsg = "1Reformer #(s)"+lst+" connection timed out"
 			except KeyboardInterrupt:
 				htop.terminate()
 				sys.exit()
-			except:
-				if cnt >= (len(ReformerIDs)-1):
-					cnt = 0
-				else:
-					cnt = cnt + 1
-				continue
-			
-			tmp = data[100-9] << 16
-			tmp |= data[99-9]
-			seconds[cnt] = tmp
+			if all(v == 0 for v in activeReformers):
+				errorMsg = "2No Reformers connected"
 
-			if time.perf_counter() - tmr > 60:
-				print(prevSeconds)
-				for i in range(len(ReformerIDs)):
-					if seconds[i] == prevSeconds[i]:
-						activeReformers[i] = False
-					else:
-						activeReformers[i] = True
-						prevSeconds[i] = seconds[i]
-				tmr = time.perf_counter()
 
-			if activeReformers[cnt]:
+			if not errorMsg and activeReformers[cnt]:
 				warning1 = data[96-9] << 16
 				warning1 |= data[95-9]
 				warning1 &= 0x1FFFFFF
@@ -168,12 +177,18 @@ def main():
 				except TypeError:
 					pass
 			
-			else:
+			elif not activeReformers[cnt]:
+				rmv = []
 				for row in tableData:
 					if row[0] == str(cnt):
-						tableData.pop(row,None)
-			
-			with open('/home/pi/R050gui/data.txt', 'w') as fd:
+						rmv.append(row)
+				for ky in rmv:
+					tableData.pop(ky,None)
+
+			with open('data.txt', 'w') as fd:
+				fd.write(errorMsg+"\n")
+				fd.close()
+			with open('data.txt', 'a') as fd:
 				for a in tableData:
 					fd.write(tableData[a])
 			if htop.poll() != None:
@@ -185,6 +200,10 @@ def main():
 				cnt = cnt + 1
 			continue
 	except KeyboardInterrupt:
+		htop.terminate()
+		sys.exit()
+	except Exception as e:
+		print(e)
 		htop.terminate()
 		sys.exit()
 

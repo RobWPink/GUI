@@ -129,9 +129,11 @@ def bitRead(value,bit):
 def main():
 	global tog
 	try:
+		canvas.create_rectangle(0,0,1080,1080,tags="BSOD",fill="#0000AA",state="hidden",outline="")
+		canvas.create_text(540,540,anchor="center",text="ERROR",tags=("BSOD","BSOD_text"),state="hidden",fill="#FFFFFF",font=("Inter Medium", 50 * -1))
 		canvas.create_rectangle(0,0,1080,230.0,tags="header",fill="#C3C3C3",outline="")
 		canvas.create_rectangle(0.0,0.0,1080.0,116.0,tags="header",fill="#EFEFEF",outline="")
-		canvas.create_text(540,150,anchor="center",text="Reformer Group A",tags="systemState",fill="#000000",font=("Inter Medium", 40 * -1))
+		canvas.create_text(540,150,anchor="center",text="Reformer Group A",tags=("header","systemState"),fill="#000000",font=("Inter Medium", 40 * -1))
 		canvas.create_text(419.0,49.0,anchor="nw",text="SINR (",tags="signalStrength",fill="#000000",font=("Inter Bold", 14 * -1))
 		canvas.create_text(470.0,49.0,anchor="nw",text="N/A",tags=("signalStrength","SINR"),fill="#000000",font=("Inter Bold", 14 * -1))
 		canvas.create_text(494.0,49.0,anchor="nw",text="dB):",tags="signalStrength",fill="#000000",font=("Inter Bold", 14 * -1))
@@ -145,7 +147,7 @@ def main():
 		canvas.create_text(488.0,91.0,anchor="nw",text="dBm):",tags="signalStrength",fill="#000000",font=("Inter Bold", 14 * -1))
 		canvas.create_rectangle(535.0,96.0,550,105,fill="black",tags=("signalStrength","ECIOrect"),outline="")
 		canvas.create_image(390.0,78.0,tags="signalStrength",image=image_signal)
-		canvas.create_text(540,1000,anchor="center",text="Page 1/1",tags="pageNum",fill="#000000",font=("Inter Medium", 25 * -1))
+		canvas.create_text(540,1000,anchor="center",text="Page 1/1",tags=("body","pageNum"),fill="#000000",font=("Inter Medium", 25 * -1))
 		canvas.create_circle(540, 540, 530,tags="outerCircle", fill="", outline="green", width=50)
 		#canvas.create_circle(540, 540, 530,tags="innerCircle", fill="", outline="orange", width=50)
 		clock = StringVar()
@@ -169,13 +171,13 @@ def main():
 			for j in range(len(tableHeader)):
 				if not i:
 					if not j:
-						canvas.create_text(235+120*j,280,anchor="center",text=tableHeader[j],tags=("tableHeader"),fill="#000000",font=("Inter ExtraBold", 30 * -1))
+						canvas.create_text(235+120*j,280,anchor="center",text=tableHeader[j],tags=("tableHeader","body"),fill="#000000",font=("Inter ExtraBold", 30 * -1))
 					else:
-						canvas.create_text(285+120*j,280,anchor="center",text=tableHeader[j],tags=("tableHeader"),fill="#000000",font=("Inter ExtraBold", 30 * -1))
+						canvas.create_text(285+120*j,280,anchor="center",text=tableHeader[j],tags=("tableHeader","body"),fill="#000000",font=("Inter ExtraBold", 30 * -1))
 				if not j:
-					canvas.create_text(235+120*j,340+i*60,anchor="center",text="",tags=("row"+str(j)+str(i)),fill="#000000",font=("Inter ExtraBold", 30 * -1))
+					canvas.create_text(235+120*j,340+i*60,anchor="center",text="",tags=("row"+str(j)+str(i),"body"),fill="#000000",font=("Inter ExtraBold", 30 * -1))
 				else:
-					canvas.create_text(285+120*j,340+i*60,anchor="center",text="",tags=("row"+str(j)+str(i)),fill="#000000",font=("Inter ExtraBold", 30 * -1))
+					canvas.create_text(285+120*j,340+i*60,anchor="center",text="",tags=("row"+str(j)+str(i),"body"),fill="#000000",font=("Inter ExtraBold", 30 * -1))
 		while True:
 			try:
 				signalStrength()
@@ -184,12 +186,20 @@ def main():
 				date.set(today.strftime("%B %d, %Y"))
 				clock.set(now.strftime("%H:%M:%S"))
 				try:
-					with open("/home/pi/R050gui/data.txt", "r") as file:
+					errorMsg = "0"
+					first = True
+					with open("data.txt", "r") as file:
 						for line in file:
-							route = line.strip().split("|")  # Split each line into a list
-							tableData[route[0]+route[1]] = route
+							if first:
+								first = False
+								if line.strip():
+									errorMsg = line.strip()
+							else:
+								route = line.strip().split("|")  # Split each line into a list
+								tableData[route[0]+route[1]] = route
 				except FileNotFoundError:
 					continue
+
 				if flash:
 					if time.perf_counter_ns() - tmr > flash:
 						canvas.itemconfig("outerCircle", state=hide(tog))
@@ -204,8 +214,16 @@ def main():
 				s = 0
 				c = 0
 				#[deviceAddr	configAddr	group#	errorBits	data	prevData	warning	error]
+				if errorMsg[0] == "2":
+					canvas.itemconfig("body",state="hidden")
+					canvas.itemconfig("BSOD",state="normal")
+					canvas.itemconfig("BSOD_text",text=errorMsg[1:])
+					flash = 0
+					canvas.itemconfig("outerCircle", state="hidden")
 
-				if tableData:
+				elif tableData:
+					canvas.itemconfig("BSOD",state="hidden")
+
 					color = "green"
 					for row in tableData:
 						if page*10 <= c < (page+1)*10:
