@@ -110,9 +110,10 @@ def main():
 				for i in range(4):
 					if activeReformers[i]:
 						lst = lst + str(i) + ","
-				if lst[-1] == ",":
-					lst = lst[:-1]
-				errorMsg = "1Reformer #(s)"+lst+" connection timed out"
+				if lst:
+					if lst[-1] == ",":
+						lst = lst[:-1]
+					errorMsg = "1Reformer #(s)"+lst+" connection timed out"
 			except KeyboardInterrupt:
 				htop.terminate()
 				sys.exit()
@@ -120,7 +121,7 @@ def main():
 				errorMsg = "2No Reformers connected"
 
 
-			if not errorMsg and activeReformers[cnt]:
+			if not errorMsg and activeReformers[cnt] and data:
 				warning1 = data[96-9] << 16
 				warning1 |= data[95-9]
 				warning1 &= 0x1FFFFFF
@@ -202,10 +203,10 @@ def main():
 	except KeyboardInterrupt:
 		htop.terminate()
 		sys.exit()
-	except Exception as e:
-		print(e)
-		htop.terminate()
-		sys.exit()
+	# except Exception as e:
+	# 	print(e)
+	# 	htop.terminate()
+	# 	sys.exit()
 
 if __name__ == '__main__':
 	main()
