@@ -222,6 +222,7 @@ def main():
 					canvas.itemconfig("outerCircle", state="hidden")
 
 				elif tableData:
+					canvas.itemconfig("body",state="normal")
 					canvas.itemconfig("BSOD",state="hidden")
 
 					color = "green"
