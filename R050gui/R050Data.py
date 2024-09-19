@@ -116,6 +116,8 @@ def main():
 					errorMsg = "1Reformer #(s)"+lst+" connection timed out"
 			except KeyboardInterrupt:
 				htop.terminate()
+				for i in len(mb):
+					mb[i].close()
 				sys.exit()
 			if all(v == 0 for v in activeReformers):
 				errorMsg = "2No Reformers connected"
@@ -194,6 +196,8 @@ def main():
 					fd.write(tableData[a])
 			if htop.poll() != None:
 				print("GUI quit")
+				for i in len(mb):
+					mb[i].close()
 				sys.exit(1)
 			if cnt >= (len(ReformerIDs)-1):
 				cnt = 0
@@ -202,11 +206,14 @@ def main():
 			continue
 	except KeyboardInterrupt:
 		htop.terminate()
+		for i in len(mb):
+			mb[i].close()
 		sys.exit()
-	# except Exception as e:
-	# 	print(e)
-	# 	htop.terminate()
-	# 	sys.exit()
+	except Exception as e:
+		htop.terminate()
+		for i in len(mb):
+			mb[i].close()
+		sys.exit()
 
 if __name__ == '__main__':
 	main()
