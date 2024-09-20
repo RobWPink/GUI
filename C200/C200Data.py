@@ -71,7 +71,7 @@ def main():
 			except KeyboardInterrupt:
 				if not options.gui:
 					htop.terminate()
-				for i in len(mb):
+				for i in range(len(mb)):
 					mb[i].close()
 				sys.exit()
 			if all(v == 0 for v in activeCompressors):
@@ -86,7 +86,7 @@ def main():
 			if not options.gui:
 				if htop.poll() != None:
 					print("GUI quit")
-					for i in len(mb):
+					for i in range(len(mb)):
 						mb[i].close()
 					sys.exit(1)
 			if cnt >= (len(compressors)-1):
@@ -97,11 +97,11 @@ def main():
 	except KeyboardInterrupt:
 		if not options.gui:
 			htop.terminate()
-		for i in len(mb):
+		for i in range(len(mb)):
 			mb[i].close()
 		sys.exit()
 	except Exception as e:
-		for i in len(mb):
+		for i in range(len(mb)):
 			mb[i].close()
 		if not options.gui:
 			htop.terminate()
