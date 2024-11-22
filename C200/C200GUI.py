@@ -138,6 +138,20 @@ def binStr(num):
 
 def bitRead(value,bit):
 	return value & 1 << bit != 0
+	
+def getserial():
+	# Extract serial from cpuinfo file
+	cpuserial = "0000000000000000"
+	try:
+		f = open('/proc/cpuinfo','r')
+		for line in f:
+			if line[0:6]=='Serial':
+			cpuserial = line[10:26]
+		f.close()
+	except:
+		cpuserial = "ERROR000000000"
+
+	return cpuserial
 
 def main():
 	try:
@@ -212,7 +226,7 @@ def main():
 		clockLabel = Label(window, bg='#C3C3C3',textvariable=clock)
 		clockLabel.place(anchor="nw", x=778, y=186)
 		clockLabel.configure(font="{Inter} 16 {}")
-
+		canvas.create_text(540.0,215,anchor="center",text=getserial(),tags=("serial","header"),fill="#0F0F0F",font=("Inter ExtraBold", 14 * -1))	
 		dateLabel = Label(window, bg='#C3C3C3',textvariable=date)
 		dateLabel.place(anchor="nw", x=186, y=186)
 		dateLabel.configure(font="{Inter} 16 {}")
