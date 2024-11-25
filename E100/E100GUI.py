@@ -370,8 +370,8 @@ def main():
 			#################################
 			if errorMsg[0] == "2":
 				displayState = 3
-			# elif errorWord1 or errorWord2:
-			# 	displayState = 1
+			elif errorWord1 or errorWord2:
+				displayState = 1
 			else:
 				displayState = 2
 
