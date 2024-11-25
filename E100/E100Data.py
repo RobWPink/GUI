@@ -1,5 +1,5 @@
 from pyModbusTCP.client import ModbusClient
-from pyModbusTCP.utils import test_bit
+from pyModbusTCP.utils import decode_ieee
 import datetime,subprocess,re,time,datetime,ctypes,os,sys,optparse,socket
 
 parser = optparse.OptionParser()
@@ -17,6 +17,7 @@ if not options.gui:
 def main():
 	global htop
 	try:
+		temp = ctypes.c_uint32(0).value
 		cnt = 0
 		errorMsg = ""
 		tmout = False
@@ -50,6 +51,20 @@ def main():
 					mb.close()
 				sys.exit()
 			if data:
+				temp = data[83] << 16
+				temp |= data[84]
+				data[83] = decode_ieee(temp)
+				data[84] = 0
+				temp = 0
+				temp = data[85] << 16
+				temp |= data[86]
+				data[85] = decode_ieee(temp)
+				data[86] = 0
+				temp = 0
+				temp = data[87] << 16
+				temp |= data[88]
+				data[87] = decode_ieee(temp)
+				data[88] = 0
 				with open('data.txt', 'w') as fd:
 						fd.write(errorMsg+"\n")
 						fd.close()

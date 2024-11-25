@@ -18,18 +18,20 @@ window.geometry("%dx%d" % (width, height)) #add this
 window.overrideredirect(True)
 window.configure(bg = "#FFFFFF",cursor="none")
 #[bit#,data]
-errors={"PT-Suction":[2,0],"PT-Discharge":[4,0],"ACT1-Position":[6,0],"ACT2-Position":[7,0],\
-	"TC-105":[8,0],"TC-205":[9,0],"TC-313":[10,0],"TC-444":[11,0],\
-	"TC-447":[12,0],"PSA1-Flow":[16,0],"PSA2-Flow":[17,0],"PT-PSA1-Inter":[18,0],\
-	"PT-PSA2-Inter":[12,0],"TC-PSA1":[13,0],"TC-PSA2":[14,0],"TC-SPARE":[15,0],"Cold Oil":[27,0],\
-	"Heater Failure":[28,0],"EVO PID Nan":[29,0],"PSA1 PID Nan":[30,0],"PSA2 PID Nan":[31,0]
+errors={"PT-Suction":[1,2,0],"PT-Discharge":[1,4,0],"ACT1-Position":[1,6,0],
+	"ACT2-Position":[1,7,0],"TC-105":[1,8,0],"TC-205":[1,9,0],"TC-313":[1,10,0],
+	"TC-444":[1,11,0],"TC-447":[1,12,0],"PSA1-Flow":[1,16,0],"PSA2-Flow":[1,17,0],
+	"PT-PSA1-Inter":[1,18,0],"PT-PSA2-Inter":[1,12,0],"TC-PSA1":[1,13,0],"TC-PSA2":[1,14,0],
+	"TC-SPARE":[1,15,0],"FM-FM904":[1,23,0],"FM-TC904":[1,24,0],"FM-PT904":[1,25,0],
+	"WaterLevel1":[2,0,0],"WaterLevel2":[2,1,0],"WaterLevel3":[2,2,0],"Cold Oil":[2,3,0],
+	"Heater Failure":[2,4,0],"EVO PID Nan":[2,5,0],"PSA1 PID Nan":[2,6,0],"PSA2 PID Nan":[2,7,0]
 }
 
 #[addr,data,bit#,side]
-devices={"PT-Suction":[11,0],"PT-Discharge":[13,0],"ACT1-Position":[15,0],"ACT2-Position":[16,0],"PT-PSA1-Inter":[17,0],"PT-PSA2-Inter":[18,0],\
-	"PSA1-Flow":[19,0],"PSA2-Flow":[20,0],"TC-105":[29,0],"TC-205":[30,0],"TC-313":[31,0],"TC-444":[32,0],\
-	"TC-447":[33,0],"TC-RPSA1":[37,0],"TC-RPSA2":[38,0],"TC-SPARE":[39,0],"AO-FCV1":[75,0],"AO-FCV2":[77,0],\
-	"AO-EVO":[81,0]
+devices={"PT-Suction":[11,0],"PT-Discharge":[13,0],"ACT1-Position":[15,0],"ACT2-Position":[16,0],"PT-PSA1-Inter":[17,0],"PT-PSA2-Inter":[18,0],
+	"PSA1-Flow":[19,0],"PSA2-Flow":[20,0],"TC-105":[29,0],"TC-205":[30,0],"TC-313":[31,0],"TC-444":[32,0],
+	"TC-447":[33,0],"TC-RPSA1":[37,0],"TC-RPSA2":[38,0],"TC-SPARE":[39,0],"AO-FCV1":[75,0],"AO-FCV2":[77,0],
+	"AO-EVO":[81,0],"FM-FM904":[83,0],"FM-TC904":[85,0],"FM-PT904":[87,0]
 }
 
 canvas = Canvas(window,bg = "#DFDFDF",height = 1080,width = 1080,bd = 0,highlightthickness = 0,relief = "ridge")
@@ -155,7 +157,8 @@ def main():
 		operating = ctypes.c_uint32(0).value
 		digitalInputs = ctypes.c_uint32(0).value
 		digitalOutputs = ctypes.c_uint32(0).value
-		errorWord = ctypes.c_uint32(0).value
+		errorWord1 = ctypes.c_uint32(0).value
+		errorWord2 = ctypes.c_uint32(0).value
 
 		#Blue Screen of Death
 		canvas.create_rectangle(0,230,1080,1080,tags="BSOD",fill="#0000FF",outline="")
@@ -273,6 +276,15 @@ def main():
 		canvas.create_rectangle(888.0,630.0,913.0,655.0,tags="mainpage",fill="#FF0000",outline="")#out2
 		canvas.create_rectangle(888.0,630.0,913.0,655.0,tags=("r50out2","mainpage"),state="hidden",fill="#00FF00",outline="")#out2
 
+		canvas.create_rectangle(346.0,953.0,740.0,1080.0,fill="#BFBFBF",outline="")
+		canvas.create_text(494.0,953.0,anchor="nw",text="FM-904",fill="#000000",font=("Inter ExtraBold", 24 * -1))
+		canvas.create_text(370.0,986.0,anchor="nw",text="Flow:",fill="#000000",font=("Inter ExtraBold", 20 * -1))
+		canvas.create_text(428.0,987.0,anchor="nw",text="999.999",tags=("FM-FM904","mainpage"),fill="#000000",font=("Inter ExtraBold", 20 * -1))
+		canvas.create_text(563.0,986.0,anchor="nw",text="Temp:",fill="#000000",font=("Inter ExtraBold", 20 * -1))
+		canvas.create_text(629.0,987.0,anchor="nw",text="999.999",tags=("FM-TC904","mainpage"),fill="#000000",font=("Inter ExtraBold", 20 * -1))
+		canvas.create_text(450.0,1016.0,anchor="nw",text="Pressure:",fill="#000000",font=("Inter ExtraBold", 20 * -1))
+		canvas.create_text(549.0,1017.0,anchor="nw",text="999.999",tags=("FM-PT904","mainpage"),fill="#000000",font=("Inter ExtraBold", 20 * -1))
+		
 		canvas.create_rectangle(310.0,242,770.0,882.0,tags="lsrPage",fill="#F0F0F0",state="hidden",outline="red",width=10)
 		canvas.create_text(540.0,285,anchor="center",text="  Error(s) Detected  ",tags="lsrPage",state="hidden",fill="#000000",font=("Inter ExtraBold", 50 * -1))
 		canvas.create_line(400,310,685,310,width=5,tags="lsrPage",state="hidden",fill="#000000")
@@ -281,6 +293,8 @@ def main():
 		for i in range(10):
 			canvas.create_text(540.0,i*60+345,anchor="center",text="",tags=("lsrData","lsrPage","lsrRow"+str(i)),state="hidden",fill="#000000",font=("Inter Medium", 40 * -1))
 		
+
+
 		clock = StringVar()
 		date = StringVar()
 		clockLabel = Label(window, bg='#C3C3C3',textvariable=clock)
@@ -323,33 +337,41 @@ def main():
 				print(e)
 				continue
 			try:
-				operating = data[92] << 16
-				operating |= data[91]
+				operating = data[94] << 16
+				operating |= data[93]
 
 				digitalInputs = data[4] << 16
 				digitalInputs |= data[3]
+
 				digitalOutputs = data[2] << 16
 				digitalOutputs |= data[1]
 
-				errorWord = data[90] << 16
-				errorWord |= data[89]
+				errorWord1 = data[90] << 16
+				errorWord1 |= data[89]
+
+				errorWord2 = data[92] << 16
+				errorWord2 |= data[91]
+
 			except:
 				window.update()
 				window.update_idletasks()
 				continue
 
 			for key in errors:
-				errors[key][1] = bitRead(errorWord,errors[key][0])
+				if errors[key][0] == 2:
+					errWrd = errorWord2
+				else:
+					errWrd = errorWord1
+				errors[key][2] = bitRead(errWrd,errors[key][1])
 
 			for dev in devices:
-				devices[dev][1] = ctypes.c_int16(data[devices[dev][0]]).value
+				devices[dev][1] = data[devices[dev][0]]
 
 			#################################
-			
 			if errorMsg[0] == "2":
 				displayState = 3
-			elif errorWord:
-				displayState = 1
+			# elif errorWord1 or errorWord2:
+			# 	displayState = 1
 			else:
 				displayState = 2
 
@@ -372,7 +394,7 @@ def main():
 				canvas.itemconfig("outerCircle", outline="red")
 				j = 0
 				for key in errors:
-					if errors[key][1]:
+					if errors[key][2]:
 						canvas.itemconfig("lsrRow"+str(j),state="normal",text=key)
 						j += 1
 				for i in range(j,10):
@@ -382,7 +404,20 @@ def main():
 				canvas.itemconfig("outerCircle", outline="green")
 				try:
 					for dev in devices:
-						canvas.itemconfig(dev,text=str(devices[dev][1]))
+						unit = ""
+						if "PT" in dev:
+							unit = "psi"
+						elif "TC" in dev:
+							unit = "C"
+						elif "Flow" in dev or "FM" in dev:
+							unit = "kg/d"
+						elif "AO" in dev:
+							unit = "%"
+
+						if isinstance(devices[dev][1],float):
+							canvas.itemconfig(dev,text="%.2f%s" % (devices[dev][1],unit))
+						else:
+							canvas.itemconfig(dev,text=str(devices[dev][1])+unit)
 					canvas.itemconfig("heater",state=hide(bitRead(digitalOutputs,3)))
 					canvas.itemconfig("cooler",state=hide(not bitRead(digitalOutputs,3)))
 					canvas.itemconfig("evoEnable",state=hide(bitRead(digitalOutputs,9)))
